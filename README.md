@@ -1,4 +1,4 @@
-# Pendulum Simulation
+# MindMap Generator
 
 This is a little web project with Javascript and D3.js. It will allow the easy generation of mindmaps in the browser.
 
