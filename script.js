@@ -2,7 +2,12 @@ var nodeCounter = 0;
 
 var clickedBefore = false;
 var coordsOld = [0,0];
-var idOld = 0;
+var objOld = 0;
+var colorOld = 'black';
+
+var coordsBeforeDrag = [];
+var xNew = 0;
+var yNew = 0;
 
 $( document ).ready(function() {
   var width = $(document).width();
@@ -37,23 +42,49 @@ $( document ).ready(function() {
 
 function dragstarted(d) {
   d3.select(this).classed("active", true);
+  coordsBeforeDrag = [];
+  for (var i = 0; i < nodeCounter*(nodeCounter-1)/2+1; i++) {
+    for (var j = 0; j < nodeCounter*(nodeCounter-1)/2+1; j++) {
+      if(d3.select(`#line${i}a${j}`).empty() == false){
+        if(parseInt(this.id.substring(9, this.id.length)) == i){
+          coordsBeforeDrag.push(`#deleteLine${i}a${j}`);
+          coordsBeforeDrag.push(parseInt(d3.select(`#deleteLine${i}a${j}`).attr('x')));
+          coordsBeforeDrag.push(parseInt(d3.select(`#deleteLine${i}a${j}`).attr('y')));
+        } else if(parseInt(this.id.substring(9, this.id.length)) == j){
+          coordsBeforeDrag.push(`#deleteLine${i}a${j}`);
+          coordsBeforeDrag.push(parseInt(d3.select(`#deleteLine${i}a${j}`).attr('x')));
+          coordsBeforeDrag.push(parseInt(d3.select(`#deleteLine${i}a${j}`).attr('y')));
+        }
+      }
+    }
+  }
+  xNew = 0;
+  yNew = 0;
 }
 
 function dragged(d) {
   d.x += d3.event.dx;
   d.y += d3.event.dy;
+  xNew += d3.event.dx;
+  yNew += d3.event.dy;
   d3.select(this).attr("transform", "translate(" + d.x + "," + d.y + ")");
-  for (var i = 0; i < nodeCounter*(nodeCounter-1)/2+1; i++) {  //prevent "double" connections
+  for (var i = 0; i < nodeCounter*(nodeCounter-1)/2+1; i++) {  //TODO: prevent dragging while drawing a line
     for (var j = 0; j < nodeCounter*(nodeCounter-1)/2+1; j++) {
       if(d3.select(`#line${i}a${j}`).empty() == false){
         if(parseInt(this.id.substring(9, this.id.length)) == i){
           d3.select(`#line${i}a${j}`)
-          .attr("x1", d.x+d3.select(this).selectAll('rect').node().getBBox().x+35)
-          .attr("y1", d.y+d3.select(this).selectAll('rect').node().getBBox().y+35);
+            .attr("x1", d.x+d3.select(this).selectAll('rect').node().getBBox().x+35)
+            .attr("y1", d.y+d3.select(this).selectAll('rect').node().getBBox().y+35);
+          d3.select(`#deleteLine${i}a${j}`)
+            .attr('x', xNew/2+coordsBeforeDrag[coordsBeforeDrag.indexOf(`#deleteLine${i}a${j}`)+1])
+            .attr('y', yNew/2+coordsBeforeDrag[coordsBeforeDrag.indexOf(`#deleteLine${i}a${j}`)+2]);
         } else if(parseInt(this.id.substring(9, this.id.length)) == j){
           d3.select(`#line${i}a${j}`)
           .attr("x2", d.x+d3.select(this).selectAll('rect').node().getBBox().x+35)
           .attr("y2", d.y+d3.select(this).selectAll('rect').node().getBBox().y+35);
+          d3.select(`#deleteLine${i}a${j}`)
+            .attr('x', xNew/2+coordsBeforeDrag[coordsBeforeDrag.indexOf(`#deleteLine${i}a${j}`)+1])
+            .attr('y', yNew/2+coordsBeforeDrag[coordsBeforeDrag.indexOf(`#deleteLine${i}a${j}`)+2]);
         }
       }
     }
@@ -77,7 +108,8 @@ function newNode(viewport, coords){
   .on("mouseover", handleMouseOver)
   .on("mouseout", handleMouseOut)
   .attr('class', 'nodeGroup')
-  .attr('id', 'nodeGroup' + nodeCounter);
+  .attr('id', 'nodeGroup' + nodeCounter)
+  .attr("transform", "translate(" + 0 + "," + 0 + ")");
 
   var lineSpace = viewport.append('g');
 
@@ -111,24 +143,52 @@ function newNode(viewport, coords){
               <i class="fa fa-arrows-v" aria-hidden="true"></i>
               </button>`)
         .on('click', function() {
+          //OK this is hacky and it still has a bug. When a node is dragged after clicking the connection goes to the location where it got clicked..
           if(clickedBefore === false){
             clickedBefore = true;
-            coordsOld = [d3.select(this).node().parentNode.getBBox().x, d3.select(this).node().parentNode.getBBox().y];
-            idOld = this.id;
-            console.log(d3.select(this).node().parentNode.getBBox().x); //obviously does not change on drag?
+            coordsOld = [35+d3.select(this).node().parentNode.getBBox().x+parseInt(d3.select(this.parentNode.parentNode).attr('transform').substring(10 ,d3.select(this.parentNode.parentNode).attr('transform').indexOf(','))), d3.select(this).node().parentNode.getBBox().y+parseInt(d3.select(this.parentNode.parentNode).attr('transform').substring(d3.select(this.parentNode.parentNode).attr('transform').indexOf(',')+1, d3.select(this.parentNode.parentNode).attr('transform').length -1))-15];
+            objOld = this;
+            colorOld = d3.select(this.parentNode.parentNode).selectAll('rect').style('fill');
+            d3.select(this.parentNode.parentNode).selectAll('rect').style('fill', 'red');
           } else {
             clickedBefore = false;
-            lineSpace.append("line")
-                    .attr("x1", d3.select(this).node().parentNode.getBBox().x+35)
-                    .attr("y1", d3.select(this).node().parentNode.getBBox().y-15)
-                    .attr("x2", coordsOld[0]+35)
-                    .attr("y2", coordsOld[1]-15)
+            if ($('#line'+this.id+'a'+ objOld.id).length || $('#line'+objOld.id+'a'+ this.id).length) {
+              alert('You can not connect nodes twice.');
+              d3.select(objOld.parentNode.parentNode).selectAll('.node').style('fill', colorOld);
+            } else if (objOld.id == this.id) {
+              alert('You can not connect a node to itself.');
+              d3.select(objOld.parentNode.parentNode).selectAll('.node').style('fill', colorOld);
+            } else{
+              var coordsNew = [d3.select(this).node().parentNode.getBBox().x+35+parseInt(d3.select(this.parentNode.parentNode).attr('transform').substring(10 ,d3.select(this.parentNode.parentNode).attr('transform').indexOf(','))), d3.select(this).node().parentNode.getBBox().y-15+parseInt(d3.select(this.parentNode.parentNode).attr('transform').substring(d3.select(this.parentNode.parentNode).attr('transform').indexOf(',')+1, d3.select(this.parentNode.parentNode).attr('transform').length -1))];
+              var line = lineSpace.append("line")
+                    .attr("x1", coordsNew[0])
+                    .attr("y1", coordsNew[1])
+                    .attr("x2", coordsOld[0])
+                    .attr("y2", coordsOld[1])
                     .attr("stroke-width", 2)
                     .attr("stroke", "red")
-                    .attr('id', 'line'+String(this.id)+'a'+ idOld);
+                    .attr('id', 'line'+this.id+'a'+ objOld.id);
 
-                    console.log(coordsOld);
+              var node1 = this.id;
+              var node2 = objOld.id;
+
+              lineSpace.append('text')
+                    .attr("x", coordsNew[0]+(coordsOld[0]-coordsNew[0])/2)
+                    .attr("y", coordsNew[1]+(coordsOld[1]-coordsNew[1])/2)
+                    .attr('font-family', 'FontAwesome')
+                    .attr('font-size', '20px' )
+                    .attr('class', 'deleteLine')
+                    .text(function(d) { return '\uf1f8' })
+                    .style('cursor', 'pointer')
+                    .attr('id', 'deleteLine'+node1+'a'+ node2)
+                    .on('click', function(){
+                      $('#line'+node1+'a'+ node2).remove();
+                      $('#deleteLine'+node1+'a'+ node2).remove();
+                    });
+
+              d3.select(objOld.parentNode.parentNode).selectAll('.node').style('fill', colorOld);
           }
+        }
       });
       //adjust nodes counter
       nodeCounter++;
@@ -143,15 +203,4 @@ function handleMouseOver (){
 
 function handleMouseOut(){
   d3.select(this).selectAll('.connector-button').style('opacity', '0');
-}
-
-function factorialize(num) {
-  var result = num;
-  if (num === 0 || num === 1)
-    return 1;
-  while (num > 1) {
-    num--;
-    result *= num;
-  }
-  return result;
 }
