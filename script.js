@@ -132,6 +132,36 @@ function newNode(viewport, coords){
       .html(`<input type="text" style="color: #FF8C00; background-color: #000000; border: none; text-align: center"></input>`);
 
   nodeGroup.append("foreignObject")
+    .attr("x", coords[0]+150)
+    .attr("y", coords[1]-15)
+    .attr("width", 0)
+    .attr("height", 0)
+      .append("xhtml:body")
+      .style("font", "16px 'Helvetica Neue'")
+      .html(`<button class="deleteNode" style="opacity: 0; color: #FFFFFF; background-color: #FF0000; border: 1px solid #888888">
+              <i class="fa fa-trash" aria-hidden="true"></i>
+              </button>`)
+              .on('click', function() {
+                var ans = window.confirm('Really delete this node?');
+                if (ans) {
+                  $(this.parentNode.parentNode).remove();
+                  //find all connections to this node and delete them
+                  for (var i = 0; i < nodeCounter*(nodeCounter-1)/2+1; i++) {
+                    if(d3.select(`#line${i}a${this.parentNode.parentNode.id.substring(9)}`).empty() == false){
+                      $(`#line${i}a${this.parentNode.parentNode.id.substring(9)}`).remove();
+                      $(`#deleteLine${i}a${this.parentNode.parentNode.id.substring(9)}`).remove();
+                    }
+                  }
+                  for (var i = 0; i < nodeCounter*(nodeCounter-1)/2+1; i++) {
+                    if(d3.select(`#line${this.parentNode.parentNode.id.substring(9)}a${i}`).empty() == false){
+                      $(`#line${this.parentNode.parentNode.id.substring(9)}a${i}`).remove();
+                      $(`#deleteLine${this.parentNode.parentNode.id.substring(9)}a${i}`).remove();
+                    }
+                  }
+                }
+              });
+
+  nodeGroup.append("foreignObject")
     .attr("x", coords[0]+35)
     .attr("y", coords[1]+35)
     .attr("width", 0)
@@ -199,8 +229,10 @@ function newNode(viewport, coords){
 
 function handleMouseOver (){
   d3.select(this).selectAll('.connector-button').style('opacity', '1');
+  d3.select(this).selectAll('.deleteNode').style('opacity', '1');
 }
 
 function handleMouseOut(){
   d3.select(this).selectAll('.connector-button').style('opacity', '0');
+  d3.select(this).selectAll('.deleteNode').style('opacity', '0');
 }
