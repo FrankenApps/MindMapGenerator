@@ -58,12 +58,23 @@ $( document ).ready(function() {
     $('input[type=file]').trigger('click');
   });
 
-  $('#saveFile').on('click', function() {
-    var svgFile = document.getElementById('svgContainer').innerHTML;
+  document.getElementById("fileLoader").addEventListener("change", function () {
+  if (this.files && this.files[0]) {
+    var myFile = this.files[0];
+    var reader = new FileReader();
 
+    reader.addEventListener('load', function (e) {
+      document.getElementById("svgContainer").innerHTML = e.target.result;
+    });
+
+    reader.readAsBinaryString(myFile);
+  }
+});
+
+  $('#saveFile').on('click', function() {
     //experimental line breaks
-    var stringArray = svgFile.split('>');
-    svgFile = '';
+    var stringArray = document.getElementById('svgContainer').innerHTML.split('>');
+    var svgFile = '';
 
     for (var i = 0; i < stringArray.length; i++) {
       svgFile += stringArray[i] + '>' + '\n';
@@ -289,4 +300,9 @@ function handleMouseOver (){
 function handleMouseOut(){
   d3.select(this).selectAll('.connector-button').style('opacity', '0');
   d3.select(this).selectAll('.deleteNode').style('opacity', '0');
+}
+
+function saveName (){
+  $('#mainTitle').html($('#nameOfMindMap').val());
+  $('#downloadSVGFile').attr('download', $('#nameOfMindMap').val()+'.svg');
 }
