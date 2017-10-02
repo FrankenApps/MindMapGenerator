@@ -9,6 +9,8 @@ var coordsBeforeDrag = [];
 var xNew = 0;
 var yNew = 0;
 
+var showDeleteLineButton = false;
+
 $( document ).ready(function() {
   var width = $(document).width();
   var height = $(document).height()-50;
@@ -36,6 +38,52 @@ $( document ).ready(function() {
 
   background.on('click', function() {
     newNode(viewport, d3.mouse(this));
+  });
+
+  $('#showDeleteLine').on('click', function() {
+    if (showDeleteLineButton) {
+      showDeleteLineButton = false;
+      d3.selectAll('.deleteLine').style('opacity', '0');
+      $('#showDeleteLine').css('font-weight', 'normal');
+      $('#showDeleteLineIcon').removeClass('showDeleteActive');
+    } else {
+      showDeleteLineButton = true;
+      d3.selectAll('.deleteLine').style('opacity', '1');
+      $('#showDeleteLine').css('font-weight', 'bold');
+      $('#showDeleteLineIcon').addClass('showDeleteActive')
+    }
+  });
+
+  $('#uploadFile').on('click', function() {
+    $('input[type=file]').trigger('click');
+  });
+
+  $('#saveFile').on('click', function() {
+    var svgFile = document.getElementById('svgContainer').innerHTML;
+
+    //experimental line breaks
+    var stringArray = svgFile.split('>');
+    svgFile = '';
+
+    for (var i = 0; i < stringArray.length; i++) {
+      svgFile += stringArray[i] + '>' + '\n';
+    }
+
+    svgFile = svgFile.substring(0, svgFile.length-2);
+
+    data = [];
+    data.push(svgFile);
+    properties = {type: 'plain/text'}; // Specify the file's mime-type.
+    try {
+      // Specify the filename using the File constructor, but ...
+      file = new File(data, "MindMap.svg", properties);
+    } catch (e) {
+      // ... fall back to the Blob constructor if that isn't supported.
+      file = new Blob(data, properties);
+    }
+    url = URL.createObjectURL(file);
+    document.getElementById('downloadSVGFile').href = url;
+    $('#downloadSVGFile')[0].click(); //strangely $('#downloadSVGFile').trigger('click'); is not working
   });
 
 });
@@ -215,6 +263,12 @@ function newNode(viewport, coords){
                       $('#line'+node1+'a'+ node2).remove();
                       $('#deleteLine'+node1+'a'+ node2).remove();
                     });
+
+              if (showDeleteLineButton) {
+                d3.select('#deleteLine'+node1+'a'+ node2).style('opacity', '1');
+              } else {
+                d3.select('#deleteLine'+node1+'a'+ node2).style('opacity', '0');
+              }
 
               d3.select(objOld.parentNode.parentNode).selectAll('.node').style('fill', colorOld);
           }

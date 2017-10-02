@@ -35,35 +35,40 @@
       </button>
 
     </div>
-    <a class="navbar-brand" href="#">Unnamed Mindmap</a>
+    <a class="navbar-brand">Unnamed Mindmap</a>
     <!-- Collect the nav links, forms, and other content for toggling -->
     <div class="collapse navbar-collapse" id="navbar-collapse-1">
 
       <ul class="nav navbar-nav navbar-left">
-        <li><a href="#">Menu</a></li>
-        <li><a href="#">Menu</a></li>
+        <li><a>Menu</a></li>
+        <li><a>Menu</a></li>
       </ul>
       <ul class="nav navbar-nav navbar-right">
-        <li><a href="#">Link</a></li>
-        <li><a href="#">Link</a></li>
-        <li><a href="#">Link</a></li>
+        <li><a id="showDeleteLine"><i id="showDeleteLineIcon" class="fa fa-trash" aria-hidden="true" style="margin-right: 1em"></i>Delete Lines</a></li>
+        <li><a>Link</a></li>
+        <li><a>Link</a></li>
         <li class="dropdown" style="margin-right: 20px">
-          <a href="#" class="dropdown-toggle" data-toggle="dropdown">Settings <b class="caret"></b></a>
+          <a class="dropdown-toggle" data-toggle="dropdown">Settings <b class="caret"></b></a>
           <ul class="dropdown-menu">
-            <li><a href="#">Action</a></li>
-            <li><a href="#">Another action</a></li>
-            <li><a href="#">Something else here</a></li>
+            <li><a id="uploadFile"><i style="margin-right: 1em" class="fa fa-upload" aria-hidden="true"></i>Load</a></li>
+            <li><a id="saveFile"><i style="margin-right: 1em" class="fa fa-floppy-o" aria-hidden="true"></i>Save</a></li>
+            <li><a><i style="margin-right: 1em" class="fa fa-file-text-o" aria-hidden="true"></i>New</a></li>
             <li class="divider"></li>
-            <li><a href="#">Separated link</a></li>
+            <li><a>Separated link</a></li>
           </ul>
         </li>
       </ul>
     </div><!-- /.navbar-collapse -->
 </nav>
 
-  <div class="container" style="margin-top:50px; width: 100%; padding-left: 0px">
+  <div class="container" style="margin-top:50px; width: 100%; padding-left: 0px" id="svgContainer">
 
   </div>
+
+  <!-- Invisible Stuff :-) -->
+  <input type="file" style="display: none" />
+  <a download="MindMap.svg" id="downloadSVGFile" href="data:application/octet-stream,HELLOWORLDDDDDDDD" style="display: none">Click here</a>
+
 
 </body>
 </html>

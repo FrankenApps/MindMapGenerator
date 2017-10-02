@@ -14,3 +14,12 @@ html, body{
 .navbar-toggle {
     z-index:3;
 }
+
+a {
+  cursor: pointer;
+}
+
+.showDeleteActive{
+  color: #FF0000;
+  font-weight: bold;
+}
