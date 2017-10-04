@@ -32,6 +32,7 @@ $( document ).ready(function() {
           .attr("y", -height*50)
           .attr("width", width*100)
           .attr("height", height*100)
+          .attr('class', 'backgroundRect')
           .attr('fill', '#ffffff');
 
   //event listeners
@@ -95,6 +96,14 @@ $( document ).ready(function() {
     url = URL.createObjectURL(file);
     document.getElementById('downloadSVGFile').href = url;
     $('#downloadSVGFile')[0].click(); //strangely $('#downloadSVGFile').trigger('click'); is not working
+  });
+
+  $('#changeBGcolor').colorpicker().on('changeColor', function(e) {
+    d3.select('.backgroundRect').style('fill', e.color.toString('rgba'));
+  });
+
+  $('#nodeColorSelector').colorpicker().on('changeColor', function(e) {
+    d3.selectAll('.node').style('fill', e.color.toString('rgba'));
   });
 
 });
@@ -220,6 +229,29 @@ function newNode(viewport, coords){
                 }
               });
 
+  var colorRect = nodeGroup.append("rect")
+      .attr("x", coords[0]+119)
+      .attr("y", coords[1]-13)
+      .attr("width", 22)
+      .attr("height", 22)
+      .attr('class', 'showNodeColorModal')
+      .style('fill', 'green')
+      .style('opacity', 0);
+
+  nodeGroup.append('text')
+        .attr("x", coords[0]+120)
+        .attr("y", coords[1]+5)
+        .attr('font-family', 'FontAwesome')
+        .attr('font-size', '20px' )
+        .attr('class', 'showNodeColorModal')
+        .text(function(d) { return '\uf2d0' })
+        .style('cursor', 'pointer')
+        .style('opacity', 0);
+
+    d3.selectAll('.showNodeColorModal').on('click', function() {
+          $('#openNodeColorModal').trigger('click');
+      });
+
   nodeGroup.append("foreignObject")
     .attr("x", coords[0]+35)
     .attr("y", coords[1]+35)
@@ -295,11 +327,13 @@ function newNode(viewport, coords){
 function handleMouseOver (){
   d3.select(this).selectAll('.connector-button').style('opacity', '1');
   d3.select(this).selectAll('.deleteNode').style('opacity', '1');
+  d3.select(this).selectAll('.showNodeColorModal').style('opacity', '1');
 }
 
 function handleMouseOut(){
   d3.select(this).selectAll('.connector-button').style('opacity', '0');
   d3.select(this).selectAll('.deleteNode').style('opacity', '0');
+  d3.select(this).selectAll('.showNodeColorModal').style('opacity', '0');
 }
 
 function saveName (){
