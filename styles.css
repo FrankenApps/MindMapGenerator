@@ -23,3 +23,7 @@ a {
   color: #FF0000;
   font-weight: bold;
 }
+
+.deleteNode{
+  cursor: pointer;
+}

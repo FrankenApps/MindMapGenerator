@@ -89,7 +89,12 @@
     aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal">&times;</button>
+            <h4 class="modal-title" style="text-align: center">Change the color of this node.</h4>
+          </div>
             <div class="modal-body">
+              <label for="nodeColorSelector">Palette is on the right</label>
                 <div id="nodeColorSelector" class="input-group colorpicker-component" on>
                   <input type="text" value="" class="form-control" />
                   <span class="input-group-addon"><i></i></span>
@@ -97,26 +102,46 @@
             </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-default" data-dismiss="modal">Revert</button>
-          <button type="button" class="btn btn-info" id="changeNodeColor" onclick="saveNodeColor()" data-dismiss="modal">Save</button>
+          <button type="button" class="btn btn-info" id="changeNodeColor" data-dismiss="modal">Save</button>
         </div>
         </div>
     </div>
 </div>
-<script>
-    $(function() {
-        $('#nodeColorSelector').colorpicker();
-    });
-</script>
 
-  <div class="container" style="margin-top:50px; width: 100%; padding-left: 0px" id="svgContainer">
+<!-- Text Input for nodes -->
+<div class="modal fade" id="textForNode" tabindex="-1" role="dialog" aria-labelledby="myModalLabel"
+    aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-body">
+              <label for="textInputforNode">Enter Text:</label>
+              <input type="text" class="form-control" id="textInputforNode" />
+            </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-info" id="setTextForNode" onclick="saveTextForNode()" data-dismiss="modal">Save</button>
+        </div>
+        </div>
+    </div>
+</div>
 
-
-  </div>
+  <div class="container" style="margin-top:50px; width: 100%; padding-left: 0px" id="svgContainer"></div>
 
   <!-- Invisible Stuff :-) -->
   <input type="file" style="display: none" id="fileLoader" />
   <a download="Unnamed Mindmap.svg" id="downloadSVGFile" href="data:application/octet-stream,none" style="display: none">Click here</a>
   <button data-toggle="modal" data-target="#setNodeColor" id="openNodeColorModal" style="display: none"></button>
+  <button data-toggle="modal" data-target="#textForNode" id="openTextForNodeModal" style="display: none"></button>
 
+  <!-- JS things that need to go here for some reason.. -->
+    <script>
+        $(function() {
+            $('#nodeColorSelector').colorpicker();
+        });
+
+        $('#textForNode').on('shown.bs.modal', function () {
+          $('#textInputforNode').focus();
+        });
+    </script>
 </body>
 </html>

@@ -4,6 +4,8 @@ var clickedBefore = false;
 var coordsOld = [0,0];
 var objOld = 0;
 var colorOld = 'black';
+var nodeInEdit = 0;
+var nodeInColorchange = 0;
 
 var coordsBeforeDrag = [];
 var xNew = 0;
@@ -103,9 +105,15 @@ $( document ).ready(function() {
   });
 
   $('#nodeColorSelector').colorpicker().on('changeColor', function(e) {
-    d3.selectAll('.node').style('fill', e.color.toString('rgba'));
+    d3.select('#nodeGroup' + nodeInColorchange).selectAll('.node').style('fill', e.color.toString('rgba'));
   });
 
+  $('#textInputforNode').keypress(function(event){
+    var keycode = (event.keyCode ? event.keyCode : event.which);
+    if(keycode == '13'){
+        $('#setTextForNode').trigger('click');
+    }
+  });
 });
 
 function dragstarted(d) {
@@ -188,46 +196,63 @@ function newNode(viewport, coords){
     .attr('ry', 40)
     .attr("width", 200)
     .attr("height", 40)
-    .attr('class', 'node');
+    .attr('class', 'node')
+    .on('click', function() {
+          nodeInEdit = parseInt(this.parentNode.id.substring(9,this.parentNode.id.length));
+          if (d3.select(this.parentNode).selectAll('.textEntry').text().length > 0) {
+            $('#textInputforNode').val(d3.select(this.parentNode).selectAll('.textEntry').text());
+          } else {
+            $('#textInputforNode').val('');
+          }
+          $('#openTextForNodeModal').trigger('click');
+      });
 
-  nodeGroup.append("foreignObject")
-    .attr("x", coords[0]+12)
-    .attr("y", coords[1]+10)
-    .attr("width", 0)
-    .attr("height", 0)
-      .append("xhtml:body")
-      .style("font", "14px 'Helvetica Neue'")
-      .html(`<input type="text" style="color: #FF8C00; background-color: #000000; border: none; text-align: center"></input>`);
+  nodeGroup.append("text")
+    .attr("x", coords[0]+100)
+    .attr("y", coords[1]+26)
+    .attr('text-anchor', 'middle')
+    .attr('class', 'textEntry')
+    .style("font-size", 20)
+    .style('fill', 'orange')
+    .style('opacity', 1)
+    .text('')
+    .on('click', function() {
+          nodeInEdit = parseInt(this.parentNode.id.substring(9,this.parentNode.id.length));
+          if (d3.select(this).text().length > 0) {
+            $('#textInputforNode').val(d3.select(this).text());
+          } else {
+            $('#textInputforNode').val('');
+          }
+          $('#openTextForNodeModal').trigger('click');
+      });
 
-  nodeGroup.append("foreignObject")
+  nodeGroup.append("rect")
     .attr("x", coords[0]+150)
     .attr("y", coords[1]-15)
-    .attr("width", 0)
-    .attr("height", 0)
-      .append("xhtml:body")
-      .style("font", "16px 'Helvetica Neue'")
-      .html(`<button class="deleteNode" style="opacity: 0; color: #FFFFFF; background-color: #FF0000; border: 1px solid #888888">
-              <i class="fa fa-trash" aria-hidden="true"></i>
-              </button>`)
-              .on('click', function() {
-                var ans = window.confirm('Really delete this node?');
-                if (ans) {
-                  $(this.parentNode.parentNode).remove();
-                  //find all connections to this node and delete them
-                  for (var i = 0; i < nodeCounter*(nodeCounter-1)/2+1; i++) {
-                    if(d3.select(`#line${i}a${this.parentNode.parentNode.id.substring(9)}`).empty() == false){
-                      $(`#line${i}a${this.parentNode.parentNode.id.substring(9)}`).remove();
-                      $(`#deleteLine${i}a${this.parentNode.parentNode.id.substring(9)}`).remove();
-                    }
-                  }
-                  for (var i = 0; i < nodeCounter*(nodeCounter-1)/2+1; i++) {
-                    if(d3.select(`#line${this.parentNode.parentNode.id.substring(9)}a${i}`).empty() == false){
-                      $(`#line${this.parentNode.parentNode.id.substring(9)}a${i}`).remove();
-                      $(`#deleteLine${this.parentNode.parentNode.id.substring(9)}a${i}`).remove();
-                    }
-                  }
-                }
-              });
+    .attr("width", 16)
+    .attr("height", 16)
+    .style('fill', 'red')
+    .style('opacity', 0)
+    .attr('class', 'deleteNode')
+    .on('click', function() {
+      var ans = window.confirm('Really delete this node?');
+      if (ans) {
+        $(this.parentNode).remove();
+        //find all connections to this node and delete them
+        for (var i = 0; i < nodeCounter*(nodeCounter-1)/2+1; i++) {
+          if(d3.select(`#line${i}a${this.parentNode.id.substring(9)}`).empty() == false){
+            $(`#line${i}a${this.parentNode.id.substring(9)}`).remove();
+            $(`#deleteLine${i}a${this.parentNode.id.substring(9)}`).remove();
+          }
+        }
+        for (var i = 0; i < nodeCounter*(nodeCounter-1)/2+1; i++) {
+          if(d3.select(`#line${this.parentNode.id.substring(9)}a${i}`).empty() == false){
+            $(`#line${this.parentNode.id.substring(9)}a${i}`).remove();
+            $(`#deleteLine${this.parentNode.id.substring(9)}a${i}`).remove();
+          }
+        }
+      }
+    });
 
   var colorRect = nodeGroup.append("rect")
       .attr("x", coords[0]+119)
@@ -248,9 +273,10 @@ function newNode(viewport, coords){
         .style('cursor', 'pointer')
         .style('opacity', 0);
 
-    d3.selectAll('.showNodeColorModal').on('click', function() {
-          $('#openNodeColorModal').trigger('click');
-      });
+  d3.selectAll('.showNodeColorModal').on('click', function() {
+        nodeInColorchange = parseInt(this.parentNode.id.substring(9,this.parentNode.id.length));
+        $('#openNodeColorModal').trigger('click');
+  });
 
   nodeGroup.append("foreignObject")
     .attr("x", coords[0]+35)
@@ -339,4 +365,9 @@ function handleMouseOut(){
 function saveName (){
   $('#mainTitle').html($('#nameOfMindMap').val());
   $('#downloadSVGFile').attr('download', $('#nameOfMindMap').val()+'.svg');
+}
+
+
+function saveTextForNode(){
+  d3.select('#nodeGroup' + nodeInEdit).selectAll('.textEntry').text($('#textInputforNode').val());
 }
