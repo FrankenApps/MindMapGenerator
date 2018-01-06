@@ -108,6 +108,10 @@ $( document ).ready(function() {
     d3.select('#nodeGroup' + nodeInColorchange).selectAll('.node').style('fill', e.color.toString('rgba'));
   });
 
+  $('#revertToOldColor').on('click', function() {
+    d3.select('#nodeGroup' + nodeInColorchange).selectAll('.node').style('fill', colorOld);
+  });
+
   $('#textInputforNode').keypress(function(event){
     var keycode = (event.keyCode ? event.keyCode : event.which);
     if(keycode == '13'){
@@ -228,13 +232,24 @@ function newNode(viewport, coords){
 
   nodeGroup.append("rect")
     .attr("x", coords[0]+150)
-    .attr("y", coords[1]-15)
-    .attr("width", 16)
-    .attr("height", 16)
+    .attr("y", coords[1]-13)
+    .attr("width", 22)
+    .attr("height", 22)
     .style('fill', 'red')
     .style('opacity', 0)
-    .attr('class', 'deleteNode')
-    .on('click', function() {
+    .attr('class', 'deleteNode');
+
+  nodeGroup.append('text')
+        .attr("x", coords[0]+153)
+        .attr("y", coords[1]+5)
+        .attr('font-family', 'FontAwesome')
+        .attr('font-size', '20px' )
+        .attr('class', 'deleteNode')
+        .text(function(d) { return '\uf1f8' })
+        .style('opacity', 0);
+
+
+    d3.selectAll('.deleteNode').on('click', function() {
       var ans = window.confirm('Really delete this node?');
       if (ans) {
         $(this.parentNode).remove();
@@ -270,79 +285,91 @@ function newNode(viewport, coords){
         .attr('font-size', '20px' )
         .attr('class', 'showNodeColorModal')
         .text(function(d) { return '\uf2d0' })
-        .style('cursor', 'pointer')
         .style('opacity', 0);
 
   d3.selectAll('.showNodeColorModal').on('click', function() {
         nodeInColorchange = parseInt(this.parentNode.id.substring(9,this.parentNode.id.length));
+        colorOld = d3.select('#nodeGroup' + nodeInColorchange).selectAll('.node').style('fill').toString();
         $('#openNodeColorModal').trigger('click');
   });
 
-  nodeGroup.append("foreignObject")
+  nodeGroup.append("rect")
     .attr("x", coords[0]+35)
     .attr("y", coords[1]+35)
-    .attr("width", 0)
-    .attr("height", 0)
-      .append("xhtml:body")
-      .attr('id', nodeCounter)
-      .style("font", "14px 'Helvetica Neue'")
-      .html(`<button style="color: #000000; background-color: #FF8C00; border: 1px solid #888888; opacity: 0" class="connector-button">
-              <i class="fa fa-arrows-v" aria-hidden="true"></i>
-              </button>`)
-        .on('click', function() {
-          //OK this is hacky and it still has a bug. When a node is dragged after clicking the connection goes to the location where it got clicked..
-          if(clickedBefore === false){
-            clickedBefore = true;
-            coordsOld = [35+d3.select(this).node().parentNode.getBBox().x+parseInt(d3.select(this.parentNode.parentNode).attr('transform').substring(10 ,d3.select(this.parentNode.parentNode).attr('transform').indexOf(','))), d3.select(this).node().parentNode.getBBox().y+parseInt(d3.select(this.parentNode.parentNode).attr('transform').substring(d3.select(this.parentNode.parentNode).attr('transform').indexOf(',')+1, d3.select(this.parentNode.parentNode).attr('transform').length -1))-15];
-            objOld = this;
-            colorOld = d3.select(this.parentNode.parentNode).selectAll('rect').style('fill');
-            d3.select(this.parentNode.parentNode).selectAll('rect').style('fill', 'red');
+    .attr("width", 22)
+    .attr("height", 22)
+    .style('fill', 'orange')
+    .style('opacity', 0)
+    .style('cursor', 'pointer')
+    .attr('class', 'connect' + nodeCounter)
+    .attr("stroke-width", 1)
+    .attr("stroke", "#B0C4DE");
+
+  nodeGroup.append('text')
+        .attr("x", coords[0]+35.7)
+        .attr("y", coords[1]+52.5)
+        .attr('font-family', 'FontAwesome')
+        .attr('font-size', '18px' )
+        .attr('class', 'connect' + nodeCounter)
+        .text(function(d) { return '\uf20e' })
+        .style('cursor', 'pointer')
+        .style('opacity', 0);
+
+    d3.selectAll('.connect'+ nodeCounter).on('click', function() {
+      //OK this is hacky and it still has a bug. When a node is dragged after clicking the connection goes to the location where it got clicked..
+      if(clickedBefore === false){
+        clickedBefore = true;
+        coordsOld = [35+d3.select(this).node().getBBox().x+parseInt(d3.select(this.parentNode).attr('transform').substring(10 ,d3.select(this.parentNode).attr('transform').indexOf(','))), d3.select(this).node().getBBox().y+parseInt(d3.select(this.parentNode).attr('transform').substring(d3.select(this.parentNode).attr('transform').indexOf(',')+1, d3.select(this.parentNode).attr('transform').length -1))-15];
+        objOld = this;
+        colorOld = d3.select(this.parentNode).selectAll('.node').style('fill');
+        d3.select(this.parentNode).selectAll('.node').style('fill', 'red');
+      } else {
+        clickedBefore = false;
+        if ($('#line'+d3.select(this).attr('class').substring(7)+'a'+ d3.select(objOld).attr('class').substring(7)).length || $('#line'+d3.select(objOld).attr('class').substring(7)+'a'+ d3.select(this).attr('class').substring(7)).length) {
+          alert('You can not connect nodes twice.');
+          d3.select(objOld.parentNode).selectAll('.node').style('fill', colorOld);
+        } else if (d3.select(objOld).attr('class').substring(7) == d3.select(this).attr('class').substring(7)) {
+          alert('You can not connect a node to itself.');
+          d3.select(objOld.parentNode).selectAll('.node').style('fill', colorOld);
+        } else{
+          var coordsNew = [d3.select(this).node().getBBox().x+35+parseInt(d3.select(this.parentNode).attr('transform').substring(10 ,d3.select(this.parentNode).attr('transform').indexOf(','))), d3.select(this).node().getBBox().y-15+parseInt(d3.select(this.parentNode).attr('transform').substring(d3.select(this.parentNode).attr('transform').indexOf(',')+1, d3.select(this.parentNode).attr('transform').length -1))];
+          var line = lineSpace.append("line")
+                .attr("x1", coordsNew[0])
+                .attr("y1", coordsNew[1])
+                .attr("x2", coordsOld[0])
+                .attr("y2", coordsOld[1])
+                .attr("stroke-width", 2)
+                .attr("stroke", "red")
+                .attr('id', 'line'+d3.select(this).attr('class').substring(7)+'a'+ d3.select(objOld).attr('class').substring(7));
+
+          var node1 = d3.select(this).attr('class').substring(7);
+          var node2 = d3.select(objOld).attr('class').substring(7);
+
+          lineSpace.append('text')
+                .attr("x", coordsNew[0]+(coordsOld[0]-coordsNew[0])/2)
+                .attr("y", coordsNew[1]+(coordsOld[1]-coordsNew[1])/2)
+                .attr('font-family', 'FontAwesome')
+                .attr('font-size', '20px' )
+                .attr('class', 'deleteLine')
+                .text(function(d) { return '\uf1f8' })
+                .style('cursor', 'pointer')
+                .attr('id', 'deleteLine'+node1+'a'+ node2)
+                .on('click', function(){
+                  $('#line'+node1+'a'+ node2).remove();
+                  $('#deleteLine'+node1+'a'+ node2).remove();
+                });
+
+          if (showDeleteLineButton) {
+            d3.select('#deleteLine'+node1+'a'+ node2).style('opacity', '1');
           } else {
-            clickedBefore = false;
-            if ($('#line'+this.id+'a'+ objOld.id).length || $('#line'+objOld.id+'a'+ this.id).length) {
-              alert('You can not connect nodes twice.');
-              d3.select(objOld.parentNode.parentNode).selectAll('.node').style('fill', colorOld);
-            } else if (objOld.id == this.id) {
-              alert('You can not connect a node to itself.');
-              d3.select(objOld.parentNode.parentNode).selectAll('.node').style('fill', colorOld);
-            } else{
-              var coordsNew = [d3.select(this).node().parentNode.getBBox().x+35+parseInt(d3.select(this.parentNode.parentNode).attr('transform').substring(10 ,d3.select(this.parentNode.parentNode).attr('transform').indexOf(','))), d3.select(this).node().parentNode.getBBox().y-15+parseInt(d3.select(this.parentNode.parentNode).attr('transform').substring(d3.select(this.parentNode.parentNode).attr('transform').indexOf(',')+1, d3.select(this.parentNode.parentNode).attr('transform').length -1))];
-              var line = lineSpace.append("line")
-                    .attr("x1", coordsNew[0])
-                    .attr("y1", coordsNew[1])
-                    .attr("x2", coordsOld[0])
-                    .attr("y2", coordsOld[1])
-                    .attr("stroke-width", 2)
-                    .attr("stroke", "red")
-                    .attr('id', 'line'+this.id+'a'+ objOld.id);
-
-              var node1 = this.id;
-              var node2 = objOld.id;
-
-              lineSpace.append('text')
-                    .attr("x", coordsNew[0]+(coordsOld[0]-coordsNew[0])/2)
-                    .attr("y", coordsNew[1]+(coordsOld[1]-coordsNew[1])/2)
-                    .attr('font-family', 'FontAwesome')
-                    .attr('font-size', '20px' )
-                    .attr('class', 'deleteLine')
-                    .text(function(d) { return '\uf1f8' })
-                    .style('cursor', 'pointer')
-                    .attr('id', 'deleteLine'+node1+'a'+ node2)
-                    .on('click', function(){
-                      $('#line'+node1+'a'+ node2).remove();
-                      $('#deleteLine'+node1+'a'+ node2).remove();
-                    });
-
-              if (showDeleteLineButton) {
-                d3.select('#deleteLine'+node1+'a'+ node2).style('opacity', '1');
-              } else {
-                d3.select('#deleteLine'+node1+'a'+ node2).style('opacity', '0');
-              }
-
-              d3.select(objOld.parentNode.parentNode).selectAll('.node').style('fill', colorOld);
+            d3.select('#deleteLine'+node1+'a'+ node2).style('opacity', '0');
           }
-        }
-      });
+
+          d3.select(objOld.parentNode).selectAll('.node').style('fill', colorOld);
+
+      }
+    }
+  });
       //adjust nodes counter
       nodeCounter++;
 
@@ -351,13 +378,13 @@ function newNode(viewport, coords){
 }
 
 function handleMouseOver (){
-  d3.select(this).selectAll('.connector-button').style('opacity', '1');
+  d3.select(this).selectAll('.connect'+this.id.substring(9,this.id.length)).style('opacity', '1');
   d3.select(this).selectAll('.deleteNode').style('opacity', '1');
   d3.select(this).selectAll('.showNodeColorModal').style('opacity', '1');
 }
 
 function handleMouseOut(){
-  d3.select(this).selectAll('.connector-button').style('opacity', '0');
+  d3.select(this).selectAll('.connect'+this.id.substring(9,this.id.length)).style('opacity', '0');
   d3.select(this).selectAll('.deleteNode').style('opacity', '0');
   d3.select(this).selectAll('.showNodeColorModal').style('opacity', '0');
 }

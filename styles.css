@@ -27,3 +27,11 @@ a {
 .deleteNode{
   cursor: pointer;
 }
+
+.showNodeColorModal{
+  cursor: pointer;
+}
+
+.node{
+  cursor: text;
+}
