@@ -288,9 +288,34 @@ function newNode(viewport, coords){
         .style('opacity', 0);
 
   d3.selectAll('.showNodeColorModal').on('click', function() {
-        nodeInColorchange = parseInt(this.parentNode.id.substring(9,this.parentNode.id.length));
+        nodeInColorchange = parseInt(this.parentNode.id.substring(9, this.parentNode.id.length));
         colorOld = d3.select('#nodeGroup' + nodeInColorchange).selectAll('.node').style('fill').toString();
         $('#openNodeColorModal').trigger('click');
+  });
+
+  //text properties
+  nodeGroup.append("rect")
+      .attr("x", coords[0]+88)
+      .attr("y", coords[1]-13)
+      .attr("width", 22)
+      .attr("height", 22)
+      .attr('class', 'textProps')
+      .style('fill', '#A4A4A4')
+      .style('opacity', 0);
+
+  nodeGroup.append('text')
+        .attr("x", coords[0]+90)
+        .attr("y", coords[1]+5)
+        .attr('font-family', 'FontAwesome')
+        .attr('font-size', '20px' )
+        .attr('class', 'textProps')
+        .text(function(d) { return '\uf031' })
+        .style('opacity', 0);
+
+  d3.selectAll('.textProps').on('click', function() {
+    //im hinterkopf behalten
+    nodeInColorchange = parseInt(this.parentNode.id.substring(9, this.parentNode.id.length));
+    $('#openTextPropsModal').trigger('click');
   });
 
   nodeGroup.append("rect")
@@ -381,12 +406,14 @@ function handleMouseOver (){
   d3.select(this).selectAll('.connect'+this.id.substring(9,this.id.length)).style('opacity', '1');
   d3.select(this).selectAll('.deleteNode').style('opacity', '1');
   d3.select(this).selectAll('.showNodeColorModal').style('opacity', '1');
+  d3.select(this).selectAll('.textProps').style('opacity', '1');
 }
 
 function handleMouseOut(){
   d3.select(this).selectAll('.connect'+this.id.substring(9,this.id.length)).style('opacity', '0');
   d3.select(this).selectAll('.deleteNode').style('opacity', '0');
   d3.select(this).selectAll('.showNodeColorModal').style('opacity', '0');
+  d3.select(this).selectAll('.textProps').style('opacity', '0');
 }
 
 function saveName (){

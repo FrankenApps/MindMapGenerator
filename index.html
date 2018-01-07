@@ -65,7 +65,6 @@
 <!-- Modal -->
 <div class="modal fade" id="nameModal" role="dialog">
 <div class="modal-dialog">
-
   <!-- Modal content-->
   <div class="modal-content">
     <div class="modal-header">
@@ -94,9 +93,9 @@
             <h4 class="modal-title" style="text-align: center">Change the color of this node.</h4>
           </div>
             <div class="modal-body">
-              <label for="nodeColorSelector">Palette is on the right</label>
+              <label for="nodeColorSelector">Select Color:</label>
                 <div id="nodeColorSelector" class="input-group colorpicker-component" on>
-                  <input type="text" value="" class="form-control" />
+                  <input type="text" value="#000000" class="form-control" />
                   <span class="input-group-addon"><i></i></span>
                 </div>
             </div>
@@ -125,6 +124,33 @@
     </div>
 </div>
 
+<!-- Text Props Modal -->
+<div class="modal fade" id="textPropsModal" role="dialog">
+<div class="modal-dialog">
+  <!-- Modal content-->
+  <div class="modal-content">
+    <div class="modal-header">
+      <button type="button" class="close" data-dismiss="modal">&times;</button>
+      <h4 class="modal-title" style="text-align: center">Edit Text Properties</h4>
+      <h6 class="modal-title" style="text-align: center; color: #C0C0C0">For the current Node</h6>
+    </div>
+    <div class="modal-body">
+      <label for="fontSize">Set font size:</label>
+      <input type="text" class="form-control" id="fontSize" />
+      <label for="textColorSelector">Set text color:</label>
+        <div id="textColorSelector" class="input-group colorpicker-component" title="Palette is on the right side" on>
+          <input type="text" class="form-control" value="#ffa500"/>
+          <span class="input-group-addon"><i></i></span>
+        </div>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-default" data-dismiss="modal" id="revertTextProps">Close</button>
+      <button type="button" class="btn btn-info" id="saveTextProps" onclick="saveName()" data-dismiss="modal">Save Name</button>
+    </div>
+  </div>
+</div>
+</div>
+
   <div class="container" style="margin-top:50px; width: 100%; padding-left: 0px" id="svgContainer"></div>
 
   <!-- Invisible Stuff :-) -->
@@ -132,11 +158,13 @@
   <a download="Unnamed Mindmap.svg" id="downloadSVGFile" href="data:application/octet-stream,none" style="display: none">Click here</a>
   <button data-toggle="modal" data-target="#setNodeColor" id="openNodeColorModal" style="display: none"></button>
   <button data-toggle="modal" data-target="#textForNode" id="openTextForNodeModal" style="display: none"></button>
+  <button data-toggle="modal" data-target="#textPropsModal" id="openTextPropsModal" style="display: none"></button>
 
   <!-- JS things that need to go here for some reason.. -->
     <script>
         $(function() {
             $('#nodeColorSelector').colorpicker();
+            $('#textColorSelector').colorpicker();
         });
 
         $('#textForNode').on('shown.bs.modal', function () {

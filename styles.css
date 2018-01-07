@@ -35,3 +35,7 @@ a {
 .node{
   cursor: text;
 }
+
+.textProps{
+  cursor: pointer;
+}
