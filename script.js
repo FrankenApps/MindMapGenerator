@@ -5,7 +5,7 @@ var coordsOld = [0,0];
 var objOld = 0;
 var colorOld = 'black';
 var nodeInEdit = 0;
-var nodeInColorchange = 0;
+var nodeInColorchange = 0;  //most likely redundant, change in the future
 
 var coordsBeforeDrag = [];
 var xNew = 0;
@@ -13,9 +13,14 @@ var yNew = 0;
 
 var showDeleteLineButton = false;
 
+window.URL = window.URL || window.webkitURL;
+
 $( document ).ready(function() {
   var width = $(document).width();
   var height = $(document).height()-50;
+
+  //slideUp
+  $('#advancedTextProps').slideUp(400);
 
   var svg = d3.select(".container")
             .append("svg")
@@ -58,30 +63,48 @@ $( document ).ready(function() {
   });
 
   $('#uploadFile').on('click', function() {
-    $('input[type=file]').trigger('click');
+    if (confirm("If you did not save earlier your current work will be lost. Continue?")) {
+      $('input[type=file]').trigger('click');
+    }
   });
-
-  document.getElementById("fileLoader").addEventListener("change", function () {
-  if (this.files && this.files[0]) {
-    var myFile = this.files[0];
-    var reader = new FileReader();
-
-    reader.addEventListener('load', function (e) {
-      document.getElementById("svgContainer").innerHTML = e.target.result;
-    });
-
-    reader.readAsBinaryString(myFile);
-  }
-});
 
   $('#saveFile').on('click', function() {
     //experimental line breaks
     var stringArray = document.getElementById('svgContainer').innerHTML.split('>');
     var svgFile = '';
 
-    for (var i = 0; i < stringArray.length; i++) {
+    for (var i = 1; i < stringArray.length; i++) {
       svgFile += stringArray[i] + '>' + '\n';
     }
+
+    //add needed xml stuff
+    svgFile = `<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   version="1.1"
+   viewBox="0 0 ${height} ${width}"` //not so good if someone changes monitor size
+    + `
+   height="${height}"
+   width="${width}">
+  <defs
+     id="defs4" />
+  <metadata
+     id="metadata7">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  `+ svgFile;
 
     svgFile = svgFile.substring(0, svgFile.length-2);
 
@@ -108,8 +131,71 @@ $( document ).ready(function() {
     d3.select('#nodeGroup' + nodeInColorchange).selectAll('.node').style('fill', e.color.toString('rgba'));
   });
 
+  $('#textColorSelector').colorpicker().on('changeColor', function(e) {
+    d3.select('#nodeGroup' + nodeInEdit).selectAll('.textEntry').style('fill', e.color.toString('rgba'));
+  });
+
   $('#revertToOldColor').on('click', function() {
     d3.select('#nodeGroup' + nodeInColorchange).selectAll('.node').style('fill', colorOld);
+  });
+
+  $('#fontSize').on('input', function(e){
+    if(isNumeric($('#fontSize').val())){
+      $(this).css('border', '1px dotted green');
+      d3.select('#nodeGroup' + nodeInEdit).selectAll('.textEntry').style("font-size", parseFloat($('#fontSize').val()));
+    } else{
+      $(this).css('border', '1px dotted red');
+      d3.select('#nodeGroup' + nodeInEdit).selectAll('.textEntry').style("font-size", 20);
+    }
+  });
+
+  $('#fontSize').focusout(function() {
+    if($(this).css('border') != '1px dotted rgb(255, 0, 0)'){
+      $(this).css('border', '1px solid #ccc');
+    }
+  });
+
+  $('#verticalPadding').on('input', function() {
+    if(isNumeric($('#verticalPadding').val())){
+      $(this).css('border', '1px dotted green');
+      d3.select('#nodeGroup' + nodeInEdit).selectAll('.textEntry').attr("transform", `translate(0, ${$('#verticalPadding').val()})`);
+    } else{
+      $(this).css('border', '1px dotted red');
+      d3.select('#nodeGroup' + nodeInEdit).selectAll('.textEntry').attr("transform", `translate(0, 0)`);
+    }
+  });
+
+  $('#verticalPadding').focusout(function() {
+    if($(this).css('border') != '1px dotted rgb(255, 0, 0)'){
+      $(this).css('border', '1px solid #ccc');
+    }
+  });
+
+  $('#alignment button').on('click', function() {
+    $('#alignment button').removeClass("btn-success").addClass("btn-default");
+    $(this).addClass("btn-success").removeClass("btn-default");
+    if($(this).html() == 'Middle'){
+      d3.select('#nodeGroup' + nodeInEdit).selectAll('.textEntry').attr('text-anchor', 'middle');
+    } else if($(this).html() == 'Left'){
+      d3.select('#nodeGroup' + nodeInEdit).selectAll('.textEntry').attr('text-anchor', 'end');
+    } else if ($(this).html() == 'Right') {
+      d3.select('#nodeGroup' + nodeInEdit).selectAll('.textEntry').attr('text-anchor', 'start');
+    }
+  });
+
+  $('#toggleAdvancedTextProps').on('click', function() {
+    if($('#toggleAdvancedTextProps > span').attr('class') == 'caret crazyDropDownThing'){
+      $('#toggleAdvancedTextProps > span').removeClass('crazyDropDownThing');
+      $('#advancedTextProps').slideDown(400);
+    } else{
+      $('#toggleAdvancedTextProps > span').addClass('crazyDropDownThing');
+      $('#advancedTextProps').slideUp(400);
+    }
+  });
+
+  $('#textFontList a').on('click', function() {
+    $('#textFont').html(this.text + ' <span class="caret">');
+      d3.select('#nodeGroup' + nodeInEdit).selectAll('.textEntry').style("font-family", this.text);
   });
 
   $('#textInputforNode').keypress(function(event){
@@ -217,7 +303,7 @@ function newNode(viewport, coords){
     .attr('text-anchor', 'middle')
     .attr('class', 'textEntry')
     .style("font-size", 20)
-    .style('fill', 'orange')
+    .style('fill', '#FFA500')
     .style('opacity', 1)
     .text('')
     .on('click', function() {
@@ -314,7 +400,31 @@ function newNode(viewport, coords){
 
   d3.selectAll('.textProps').on('click', function() {
     //im hinterkopf behalten
-    nodeInColorchange = parseInt(this.parentNode.id.substring(9, this.parentNode.id.length));
+    nodeInEdit = parseInt(this.parentNode.id.substring(9, this.parentNode.id.length));
+    //set current props in modal
+    $('#fontSize').val(d3.select('#nodeGroup' + nodeInEdit).selectAll('.textEntry').style("font-size").slice(0,-2));
+    $('#textColorSelectorInput').val(rgb2hex(d3.select('#nodeGroup' + nodeInEdit).selectAll('.textEntry').style("fill")));
+    $('#textColorSelectorInput').trigger('change');
+    if(d3.select('#nodeGroup' + nodeInEdit).selectAll('.textEntry').attr('text-anchor')=='middle'){
+      $('#alignment button').removeClass("btn-success").addClass("btn-default");
+      $('#alB2').addClass("btn-success").removeClass("btn-default");
+    } else if (d3.select('#nodeGroup' + nodeInEdit).selectAll('.textEntry').attr('text-anchor')=='end') {
+      $('#alignment button').removeClass("btn-success").addClass("btn-default");
+      $('#alB1').addClass("btn-success").removeClass("btn-default");
+    } else {
+      $('#alignment button').removeClass("btn-success").addClass("btn-default");
+      $('#alB3').addClass("btn-success").removeClass("btn-default");
+    }
+    //adjust selected font
+    var transformString = d3.select('#nodeGroup' + nodeInEdit).selectAll('.textEntry').attr("transform");
+    if(transformString == null){
+      $('#verticalPadding').val('0');
+    } else{
+      transformString  = transformString.slice(transformString.indexOf(',')+1);
+      transformString = transformString.slice(0,-1);
+      $('#verticalPadding').val(transformString);
+    }
+    //open modal
     $('#openTextPropsModal').trigger('click');
   });
 
@@ -339,68 +449,68 @@ function newNode(viewport, coords){
         .text(function(d) { return '\uf20e' })
         .style('cursor', 'pointer')
         .style('opacity', 0);
-
-    d3.selectAll('.connect'+ nodeCounter).on('click', function() {
-      //OK this is hacky and it still has a bug. When a node is dragged after clicking the connection goes to the location where it got clicked..
-      if(clickedBefore === false){
-        clickedBefore = true;
-        coordsOld = [35+d3.select(this).node().getBBox().x+parseInt(d3.select(this.parentNode).attr('transform').substring(10 ,d3.select(this.parentNode).attr('transform').indexOf(','))), d3.select(this).node().getBBox().y+parseInt(d3.select(this.parentNode).attr('transform').substring(d3.select(this.parentNode).attr('transform').indexOf(',')+1, d3.select(this.parentNode).attr('transform').length -1))-15];
-        objOld = this;
-        colorOld = d3.select(this.parentNode).selectAll('.node').style('fill');
-        d3.select(this.parentNode).selectAll('.node').style('fill', 'red');
-      } else {
-        clickedBefore = false;
-        if ($('#line'+d3.select(this).attr('class').substring(7)+'a'+ d3.select(objOld).attr('class').substring(7)).length || $('#line'+d3.select(objOld).attr('class').substring(7)+'a'+ d3.select(this).attr('class').substring(7)).length) {
-          alert('You can not connect nodes twice.');
-          d3.select(objOld.parentNode).selectAll('.node').style('fill', colorOld);
-        } else if (d3.select(objOld).attr('class').substring(7) == d3.select(this).attr('class').substring(7)) {
-          alert('You can not connect a node to itself.');
-          d3.select(objOld.parentNode).selectAll('.node').style('fill', colorOld);
-        } else{
-          var coordsNew = [d3.select(this).node().getBBox().x+35+parseInt(d3.select(this.parentNode).attr('transform').substring(10 ,d3.select(this.parentNode).attr('transform').indexOf(','))), d3.select(this).node().getBBox().y-15+parseInt(d3.select(this.parentNode).attr('transform').substring(d3.select(this.parentNode).attr('transform').indexOf(',')+1, d3.select(this.parentNode).attr('transform').length -1))];
-          var line = lineSpace.append("line")
-                .attr("x1", coordsNew[0])
-                .attr("y1", coordsNew[1])
-                .attr("x2", coordsOld[0])
-                .attr("y2", coordsOld[1])
-                .attr("stroke-width", 2)
-                .attr("stroke", "red")
-                .attr('id', 'line'+d3.select(this).attr('class').substring(7)+'a'+ d3.select(objOld).attr('class').substring(7));
-
-          var node1 = d3.select(this).attr('class').substring(7);
-          var node2 = d3.select(objOld).attr('class').substring(7);
-
-          lineSpace.append('text')
-                .attr("x", coordsNew[0]+(coordsOld[0]-coordsNew[0])/2)
-                .attr("y", coordsNew[1]+(coordsOld[1]-coordsNew[1])/2)
-                .attr('font-family', 'FontAwesome')
-                .attr('font-size', '20px' )
-                .attr('class', 'deleteLine')
-                .text(function(d) { return '\uf1f8' })
-                .style('cursor', 'pointer')
-                .attr('id', 'deleteLine'+node1+'a'+ node2)
-                .on('click', function(){
-                  $('#line'+node1+'a'+ node2).remove();
-                  $('#deleteLine'+node1+'a'+ node2).remove();
-                });
-
-          if (showDeleteLineButton) {
-            d3.select('#deleteLine'+node1+'a'+ node2).style('opacity', '1');
+        d3.selectAll('.connect'+ nodeCounter).on('click', function() {
+          //OK this is hacky and it still has a bug. When a node is dragged after clicking the connection goes to the location where it got clicked..
+          if(clickedBefore === false){
+            clickedBefore = true;
+            coordsOld = [35+d3.select(this).node().getBBox().x+parseInt(d3.select(this.parentNode).attr('transform').substring(10 ,d3.select(this.parentNode).attr('transform').indexOf(','))), d3.select(this).node().getBBox().y+parseInt(d3.select(this.parentNode).attr('transform').substring(d3.select(this.parentNode).attr('transform').indexOf(',')+1, d3.select(this.parentNode).attr('transform').length -1))-15];
+            objOld = this;
+            colorOld = d3.select(this.parentNode).selectAll('.node').style('fill');
+            d3.select(this.parentNode).selectAll('.node').style('fill', 'red');
           } else {
-            d3.select('#deleteLine'+node1+'a'+ node2).style('opacity', '0');
+            clickedBefore = false;
+            if ($('#line'+d3.select(this).attr('class').substring(7)+'a'+ d3.select(objOld).attr('class').substring(7)).length || $('#line'+d3.select(objOld).attr('class').substring(7)+'a'+ d3.select(this).attr('class').substring(7)).length) {
+              alert('You can not connect nodes twice.');
+              d3.select(objOld.parentNode).selectAll('.node').style('fill', colorOld);
+            } else if (d3.select(objOld).attr('class').substring(7) == d3.select(this).attr('class').substring(7)) {
+              alert('You can not connect a node to itself.');
+              d3.select(objOld.parentNode).selectAll('.node').style('fill', colorOld);
+            } else{
+              var coordsNew = [d3.select(this).node().getBBox().x+35+parseInt(d3.select(this.parentNode).attr('transform').substring(10 ,d3.select(this.parentNode).attr('transform').indexOf(','))), d3.select(this).node().getBBox().y-15+parseInt(d3.select(this.parentNode).attr('transform').substring(d3.select(this.parentNode).attr('transform').indexOf(',')+1, d3.select(this.parentNode).attr('transform').length -1))];
+              var line = lineSpace.append("line")
+              .attr("x1", coordsNew[0])
+              .attr("y1", coordsNew[1])
+              .attr("x2", coordsOld[0])
+              .attr("y2", coordsOld[1])
+              .attr("stroke-width", 2)
+              .attr("stroke", "red")
+              .attr('id', 'line'+d3.select(this).attr('class').substring(7)+'a'+ d3.select(objOld).attr('class').substring(7));
+
+              var node1 = d3.select(this).attr('class').substring(7);
+              var node2 = d3.select(objOld).attr('class').substring(7);
+
+              lineSpace.append('text')
+              .attr("x", coordsNew[0]+(coordsOld[0]-coordsNew[0])/2)
+              .attr("y", coordsNew[1]+(coordsOld[1]-coordsNew[1])/2)
+              .attr('font-family', 'FontAwesome')
+              .attr('font-size', '20px' )
+              .attr('class', 'deleteLine')
+              .text(function(d) { return '\uf1f8' })
+              .style('cursor', 'pointer')
+              .attr('id', 'deleteLine'+node1+'a'+ node2)
+              .on('click', function(){
+                $('#line'+node1+'a'+ node2).remove();
+                $('#deleteLine'+node1+'a'+ node2).remove();
+              });
+
+              if (showDeleteLineButton) {
+                d3.select('#deleteLine'+node1+'a'+ node2).style('opacity', '1');
+              } else {
+                d3.select('#deleteLine'+node1+'a'+ node2).style('opacity', '0');
+              }
+
+              d3.select(objOld.parentNode).selectAll('.node').style('fill', colorOld);
+
+            }
           }
+        });
+        //adjust nodes counter
+        nodeCounter++;
 
-          d3.select(objOld.parentNode).selectAll('.node').style('fill', colorOld);
-
+        //raise node groups over lineSpace
+        d3.selectAll('.nodeGroup').raise();
       }
-    }
-  });
-      //adjust nodes counter
-      nodeCounter++;
 
-      //raise node groups over lineSpace
-      d3.selectAll('.nodeGroup').raise();
-}
 
 function handleMouseOver (){
   d3.select(this).selectAll('.connect'+this.id.substring(9,this.id.length)).style('opacity', '1');
@@ -425,3 +535,202 @@ function saveName (){
 function saveTextForNode(){
   d3.select('#nodeGroup' + nodeInEdit).selectAll('.textEntry').text($('#textInputforNode').val());
 }
+
+function isNumeric(val) {
+    var _val = +val;
+    return (val !== val + 1) //infinity check
+        && (_val === +val) //Cute coercion check
+        && (typeof val !== 'object') //Array/object check
+        && (val.replace(/\s/g,'') !== '') //Empty
+        && (val.slice(-1) !== '.') //Decimal without Number
+}
+
+//Function to convert hex format to a rgb color
+function rgb2hex(rgb){
+ rgb = rgb.match(/^rgba?[\s+]?\([\s+]?(\d+)[\s+]?,[\s+]?(\d+)[\s+]?,[\s+]?(\d+)[\s+]?/i);
+ return (rgb && rgb.length === 4) ? "#" +
+  ("0" + parseInt(rgb[1],10).toString(16)).slice(-2) +
+  ("0" + parseInt(rgb[2],10).toString(16)).slice(-2) +
+  ("0" + parseInt(rgb[3],10).toString(16)).slice(-2) : '';
+}
+
+function prepareSvg(){
+  //zoom and drag not working
+    var svg = d3.select('svg').call(d3.zoom().on("zoom", function () {
+    svg.attr("transform", d3.event.transform);
+  }));
+
+  //listner for hover and drag of nodes
+  d3.selectAll('.nodeGroup').datum({
+    x: 0,
+    y: 0
+  })
+  .call(d3.drag()
+    .on("start", dragstarted)
+    .on("drag", dragged)
+    .on("end", dragended))
+  .on("mouseover", handleMouseOver)
+  .on("mouseout", handleMouseOut);
+
+  //listener for text change
+  d3.selectAll('.node').on('click', function() {
+        nodeInEdit = parseInt(this.parentNode.id.substring(9,this.parentNode.id.length));
+        if (d3.select(this.parentNode).selectAll('.textEntry').text().length > 0) {
+          $('#textInputforNode').val(d3.select(this.parentNode).selectAll('.textEntry').text());
+        } else {
+          $('#textInputforNode').val('');
+        }
+        $('#openTextForNodeModal').trigger('click');
+    });
+
+    d3.selectAll('.textEntry').on('click', function() {
+          nodeInEdit = parseInt(this.parentNode.id.substring(9,this.parentNode.id.length));
+          if (d3.select(this).text().length > 0) {
+            $('#textInputforNode').val(d3.select(this).text());
+          } else {
+            $('#textInputforNode').val('');
+          }
+          $('#openTextForNodeModal').trigger('click');
+      });
+
+    //listener for connection
+    d3.selectAll('.connect'+ nodeCounter).on('click', function() {
+      //OK this is hacky and it still has a bug. When a node is dragged after clicking the connection goes to the location where it got clicked..
+      if(clickedBefore === false){
+        clickedBefore = true;
+        coordsOld = [35+d3.select(this).node().getBBox().x+parseInt(d3.select(this.parentNode).attr('transform').substring(10 ,d3.select(this.parentNode).attr('transform').indexOf(','))), d3.select(this).node().getBBox().y+parseInt(d3.select(this.parentNode).attr('transform').substring(d3.select(this.parentNode).attr('transform').indexOf(',')+1, d3.select(this.parentNode).attr('transform').length -1))-15];
+        objOld = this;
+        colorOld = d3.select(this.parentNode).selectAll('.node').style('fill');
+        d3.select(this.parentNode).selectAll('.node').style('fill', 'red');
+      } else {
+        clickedBefore = false;
+        if ($('#line'+d3.select(this).attr('class').substring(7)+'a'+ d3.select(objOld).attr('class').substring(7)).length || $('#line'+d3.select(objOld).attr('class').substring(7)+'a'+ d3.select(this).attr('class').substring(7)).length) {
+          alert('You can not connect nodes twice.');
+          d3.select(objOld.parentNode).selectAll('.node').style('fill', colorOld);
+        } else if (d3.select(objOld).attr('class').substring(7) == d3.select(this).attr('class').substring(7)) {
+          alert('You can not connect a node to itself.');
+          d3.select(objOld.parentNode).selectAll('.node').style('fill', colorOld);
+        } else{
+          var coordsNew = [d3.select(this).node().getBBox().x+35+parseInt(d3.select(this.parentNode).attr('transform').substring(10 ,d3.select(this.parentNode).attr('transform').indexOf(','))), d3.select(this).node().getBBox().y-15+parseInt(d3.select(this.parentNode).attr('transform').substring(d3.select(this.parentNode).attr('transform').indexOf(',')+1, d3.select(this.parentNode).attr('transform').length -1))];
+          var line = lineSpace.append("line")
+          .attr("x1", coordsNew[0])
+          .attr("y1", coordsNew[1])
+          .attr("x2", coordsOld[0])
+          .attr("y2", coordsOld[1])
+          .attr("stroke-width", 2)
+          .attr("stroke", "red")
+          .attr('id', 'line'+d3.select(this).attr('class').substring(7)+'a'+ d3.select(objOld).attr('class').substring(7));
+
+          var node1 = d3.select(this).attr('class').substring(7);
+          var node2 = d3.select(objOld).attr('class').substring(7);
+
+          lineSpace.append('text')
+          .attr("x", coordsNew[0]+(coordsOld[0]-coordsNew[0])/2)
+          .attr("y", coordsNew[1]+(coordsOld[1]-coordsNew[1])/2)
+          .attr('font-family', 'FontAwesome')
+          .attr('font-size', '20px' )
+          .attr('class', 'deleteLine')
+          .text(function(d) { return '\uf1f8' })
+          .style('cursor', 'pointer')
+          .attr('id', 'deleteLine'+node1+'a'+ node2)
+          .on('click', function(){
+            $('#line'+node1+'a'+ node2).remove();
+            $('#deleteLine'+node1+'a'+ node2).remove();
+          });
+
+          if (showDeleteLineButton) {
+            d3.select('#deleteLine'+node1+'a'+ node2).style('opacity', '1');
+          } else {
+            d3.select('#deleteLine'+node1+'a'+ node2).style('opacity', '0');
+          }
+
+          d3.select(objOld.parentNode).selectAll('.node').style('fill', colorOld);
+
+        }
+      }
+    });
+
+    //listener for delete node
+    d3.selectAll('.deleteNode').on('click', function() {
+      var ans = window.confirm('Really delete this node?');
+      if (ans) {
+        $(this.parentNode).remove();
+        //find all connections to this node and delete them
+        for (var i = 0; i < nodeCounter*(nodeCounter-1)/2+1; i++) {
+          if(d3.select(`#line${i}a${this.parentNode.id.substring(9)}`).empty() == false){
+            $(`#line${i}a${this.parentNode.id.substring(9)}`).remove();
+            $(`#deleteLine${i}a${this.parentNode.id.substring(9)}`).remove();
+          }
+        }
+        for (var i = 0; i < nodeCounter*(nodeCounter-1)/2+1; i++) {
+          if(d3.select(`#line${this.parentNode.id.substring(9)}a${i}`).empty() == false){
+            $(`#line${this.parentNode.id.substring(9)}a${i}`).remove();
+            $(`#deleteLine${this.parentNode.id.substring(9)}a${i}`).remove();
+          }
+        }
+      }
+    });
+
+    //listener for node color
+    d3.selectAll('.showNodeColorModal').on('click', function() {
+          nodeInColorchange = parseInt(this.parentNode.id.substring(9, this.parentNode.id.length));
+          colorOld = d3.select('#nodeGroup' + nodeInColorchange).selectAll('.node').style('fill').toString();
+          $('#openNodeColorModal').trigger('click');
+    });
+
+    //listener for text props
+    d3.selectAll('.textProps').on('click', function() {
+      nodeInEdit = parseInt(this.parentNode.id.substring(9, this.parentNode.id.length));
+      //set current props in modal
+      $('#fontSize').val(d3.select('#nodeGroup' + nodeInEdit).selectAll('.textEntry').style("font-size").slice(0,-2));
+      $('#textColorSelectorInput').val(rgb2hex(d3.select('#nodeGroup' + nodeInEdit).selectAll('.textEntry').style("fill")));
+      $('#textColorSelectorInput').trigger('change');
+      if(d3.select('#nodeGroup' + nodeInEdit).selectAll('.textEntry').attr('text-anchor')=='middle'){
+        $('#alignment button').removeClass("btn-success").addClass("btn-default");
+        $('#alB2').addClass("btn-success").removeClass("btn-default");
+      } else if (d3.select('#nodeGroup' + nodeInEdit).selectAll('.textEntry').attr('text-anchor')=='end') {
+        $('#alignment button').removeClass("btn-success").addClass("btn-default");
+        $('#alB1').addClass("btn-success").removeClass("btn-default");
+      } else {
+        $('#alignment button').removeClass("btn-success").addClass("btn-default");
+        $('#alB3').addClass("btn-success").removeClass("btn-default");
+      }
+      //adjust selected font
+      var transformString = d3.select('#nodeGroup' + nodeInEdit).selectAll('.textEntry').attr("transform");
+      if(transformString == null){
+        $('#verticalPadding').val('0');
+      } else{
+        transformString  = transformString.slice(transformString.indexOf(',')+1);
+        transformString = transformString.slice(0,-1);
+        $('#verticalPadding').val(transformString);
+      }
+      //open modal
+      $('#openTextPropsModal').trigger('click');
+    });
+
+    //listener for new node
+    d3.select('.backgroundRect').on('click', function() {
+      newNode(d3.select('svg').append('g'), d3.mouse(this));
+    });
+
+}
+
+function handleFiles(files) {
+var main_div = d3.select(".container");
+var svg;
+
+d3.select('svg').remove(); //delete previous svg (after user confirmed)
+
+d3.xml(window.URL.createObjectURL(files[0]), function(error, documentFragment) {
+        if (error) {console.log(error); return;}
+
+       var svgNode = documentFragment
+                    .getElementsByTagName("svg")[0];
+
+        main_div.node().appendChild(svgNode);
+
+        svg = main_div.select("svg");
+
+        prepareSvg();
+    });
+  }
