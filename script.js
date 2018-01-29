@@ -29,7 +29,8 @@ $( document ).ready(function() {
             .call(d3.zoom().on("zoom", function () {
               svg.attr("transform", d3.event.transform);
             }))
-        .append("g");
+        .append("g")
+        .attr('id', 'mainGroup');
 
   var viewport = svg.append('g');
 
@@ -555,10 +556,16 @@ function rgb2hex(rgb){
 }
 
 function prepareSvg(){
-  //zoom and drag not working
-    var svg = d3.select('svg').call(d3.zoom().on("zoom", function () {
-    svg.attr("transform", d3.event.transform);
+  //zoom and drag  need to be performed on a 'g'
+  d3.select('svg').call(d3.zoom().on("zoom", function () {
+    d3.select('#mainGroup').attr("transform", d3.event.transform);
   }));
+
+  //reset nodeCounter
+  nodeCounter = 0;
+  while (d3.select(`#nodeGroup${nodeCounter}`).empty() == false) {
+    nodeCounter++;
+  }
 
   //listner for hover and drag of nodes
   d3.selectAll('.nodeGroup').datum({
