@@ -63,6 +63,12 @@ $( document ).ready(function() {
     }
   });
 
+  $('#newFile').on('click', function() {
+    if (confirm("If you did not save earlier your current work will be lost. Continue?")) {
+      location.reload();
+    }
+  });
+
   $('#uploadFile').on('click', function() {
     if (confirm("If you did not save earlier your current work will be lost. Continue?")) {
       $('input[type=file]').trigger('click');
